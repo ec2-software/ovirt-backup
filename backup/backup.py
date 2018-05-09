@@ -14,7 +14,6 @@ class Backup:
         self.config = config["ovirt"]
         self.blacklist = config["blacklist"]
         self.backends = []
-        self.log = logging.getLogger()
 
         # Use timestamp as a unique ID
         self.event_id = int(time.time())
@@ -23,13 +22,18 @@ class Backup:
         self.backends.append(backend)
 
     def connect(self):
+        logging.info(
+            'Logging into %s@%s with \'%s\'.',
+            self.config["username"], self.config["url"], self.config["ca_file"]
+        )
+
         self.connection = connection = sdk.Connection(
             url=self.config["url"],
             username=self.config["username"],
             password=self.config["password"],
             ca_file=self.config["ca_file"],
             debug=True,
-            log=self.log
+            log=logging.getLogger()
         )
 
         # Get the reference to the root of the services tree:
@@ -44,9 +48,9 @@ class Backup:
 
         # Find the virtual machine were we will attach the disks in order to do
         # the backup:
-        agent_vm = vms_service.list(
-            search='name={}'.format(self.config["vm_name"]))[0]
-        self.log.info(
+        agent_vm_name = self.config["vm_name"]
+        agent_vm = vms_service.list(search='name={}'.format(agent_vm_name))[0]
+        logging.info(
             'Found  mount agent virtual machine \'%s\', the id is \'%s\'.',
             agent_vm.name, agent_vm.id,
         )
@@ -87,7 +91,7 @@ class Backup:
                 persist_memorystate=True,
             ),
         )
-        self.log.info(
+        logging.info(
             'Sent request to create snapshot \'%s\', the id is \'%s\'.',
             snap.description, snap.id,
         )
@@ -96,13 +100,13 @@ class Backup:
         # that it is completely created:
         snap_service = snaps_service.snapshot_service(snap.id)
         while snap.snapshot_status != types.SnapshotStatus.OK:
-            self.log.info(
+            logging.info(
                 'Waiting till the snapshot is created, the satus is now \'%s\'.',
                 snap.snapshot_status,
             )
             time.sleep(1)
             snap = snap_service.get()
-        self.log.info('The snapshot is now complete.')
+        logging.info('The snapshot is now complete.')
 
         # Retrieve the descriptions of the disks of the snapshot:
         snap_disks_service = snap_service.disks_service()
@@ -128,7 +132,7 @@ class Backup:
                 ),
             )
             attachments.append(attachment)
-            self.log.info(
+            logging.info(
                 'Attached disk \'%s\' to the agent virtual machine.',
                 attachment.disk.id,
             )
@@ -142,12 +146,12 @@ class Backup:
         # just been attached.
         for attachment in attachments:
             if attachment.logical_name is not None:
-                self.log.info(
+                logging.info(
                     'Logical name for disk \'%s\' is \'%s\'.',
                     attachment.disk.id, attachment.logicalname,
                 )
             else:
-                self.log.info(
+                logging.info(
                     'The logical name for disk \'%s\' isn\'t available. Is the '
                     'guest agent installed?',
                     attachment.disk.id,
@@ -155,7 +159,7 @@ class Backup:
 
         # Insert here the code to contact the backup agent and do the actual
         # backup ...
-        self.log.info('Doing the actual backup ...')
+        logging.info('Doing the actual backup ...')
 
         # We need to sleep here because the system needs time to scan the drives
         time.sleep(self.config["attach_wait_seconds"])
@@ -171,7 +175,7 @@ class Backup:
             attachment_service = self.attachments_service.attachment_service(
                 attachment.id)
             attachment_service.remove()
-            self.log.info(
+            logging.info(
                 'Detached disk \'%s\' to from the agent virtual machine.',
                 attachment.disk.id,
             )
@@ -194,7 +198,7 @@ class Backup:
             name=data_vm.name, id=data_vm.id)
         with open(ovf_file, 'wb') as ovs_fd:
             ovs_fd.write(ovf_data.encode('utf-8'))
-        self.log.info('Wrote OVF to file \'%s\'.', os.path.abspath(ovf_file))
+        logging.info('Wrote OVF to file \'%s\'.', os.path.abspath(ovf_file))
 
     def get_vms(self):
         # Find the virtual machine that we want to back up. Note that we need to
@@ -208,7 +212,8 @@ class Backup:
             for x in self.blacklist:
                 if x.startswith("/") and x.endswith("/"):
                     x = x[1:-1]
-                    return bool(re.match(x, vm.name))
+                    if re.match(x, vm.name):
+                        return False
                 elif x == vm.name:
                     return False
             return True
@@ -223,7 +228,6 @@ class Backup:
 
     def backup(self):
         self.connect()
-        errors = []
         try:
             for data_vm in self.get_vms():
                 self.save_ovf(data_vm)
@@ -231,14 +235,8 @@ class Backup:
                 try:
                     for backend in self.backends:
                         if backend.enabled_now:
-                            try:
-                                backend.backup()
-                            except Exception as exc:
-                                self.log.error(exc)
-                                errors.append(exc)
+                            backend.backup(data_vm.name)
                 finally:
                     self.detach_disk(data_vm)
         finally:
             self.close()
-        for err in errors:
-            raise err

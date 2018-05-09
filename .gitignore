@@ -1,3 +1,5 @@
 config.yml
 *.pem
 __pycache__
+*.log
+*.pyc
