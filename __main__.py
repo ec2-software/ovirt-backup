@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 import yaml
-from lib import Backup,ResticBackend
+import backup
+import backup.backends
 
 with open("config.yml") as c:
     config = yaml.safe_load(c)
 
-b = Backup(config)
-b.add(ResticBackend(config["restic"]))
-b.backup()
+b = backup.Backup(config)
+b.add(backup.backends.ResticBackend(config["restic"]))
+#b.backup()
