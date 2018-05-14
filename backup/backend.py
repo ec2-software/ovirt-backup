@@ -2,8 +2,10 @@ import os
 import re
 
 class Backend:
-    def __init__(self, config):
+    def __init__(self, name, config):
+        self.name = name
         self.config = config
+        self.parent = None
 
     def backup(self):
         raise NotImplementedError()

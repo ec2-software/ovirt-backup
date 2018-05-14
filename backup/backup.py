@@ -14,12 +14,15 @@ class Backup:
         self.config = config["ovirt"]
         self.blacklist = config["blacklist"]
         self.backends = []
+        self.search = None
+        self.umount = True
 
         # Use timestamp as a unique ID
         self.event_id = int(time.time())
 
     def add(self, backend: Backend):
         self.backends.append(backend)
+        backend.parent = self
 
     def connect(self):
         logging.info(
@@ -100,10 +103,6 @@ class Backup:
         # that it is completely created:
         snap_service = snaps_service.snapshot_service(snap.id)
         while snap.snapshot_status != types.SnapshotStatus.OK:
-            logging.info(
-                'Waiting till the snapshot is created, the satus is now \'%s\'.',
-                snap.snapshot_status,
-            )
             time.sleep(1)
             snap = snap_service.get()
         logging.info('The snapshot is now complete.')
@@ -157,10 +156,6 @@ class Backup:
                     attachment.disk.id,
                 )
 
-        # Insert here the code to contact the backup agent and do the actual
-        # backup ...
-        logging.info('Doing the actual backup ...')
-
         # We need to sleep here because the system needs time to scan the drives
         time.sleep(self.config["attach_wait_seconds"])
 
@@ -170,6 +165,10 @@ class Backup:
         self.snap_service = snap_service
 
     def detach_disk(self, data_vm):
+        if not self.umount:
+            logging.info("Skipping detach")
+            return
+
         # Detach the disks from the agent virtual machine:
         for attachment in self.attachments:
             attachment_service = self.attachments_service.attachment_service(
@@ -204,7 +203,7 @@ class Backup:
         # Find the virtual machine that we want to back up. Note that we need to
         # use the 'all_content' parameter to retrieve the retrieve the OVF, as
         # it isn't retrieved by default:
-        l = self.vms_service.list(all_content=True)
+        l = self.vms_service.list(all_content=True, search=self.search)
 
         def exclude_vms(vm):
             if vm.name == self.config["vm_name"]:
@@ -217,9 +216,10 @@ class Backup:
                 elif x == vm.name:
                     return False
             return True
-        return filter(exclude_vms, l)
+        return list(filter(exclude_vms, l))
 
     def close(self):
+        logging.info("Closing connection")
         self.connection.close()
         self.connection = None
         self.agent_vm_service = None
@@ -229,13 +229,19 @@ class Backup:
     def backup(self):
         self.connect()
         try:
-            for data_vm in self.get_vms():
+            vms = self.get_vms()
+            logging.info("Backing up %s vms", len(vms))
+            for data_vm in vms:
                 self.save_ovf(data_vm)
                 self.attach_disk(data_vm)
                 try:
                     for backend in self.backends:
+                        logging.info('Checking backend if enabled...')
                         if backend.enabled_now:
+                            logging.info(
+                                'Backing %s up with backend %s', data_vm.name, backend.name)
                             backend.backup(data_vm.name)
+                        logging.info('Done with backup')
                 finally:
                     self.detach_disk(data_vm)
         finally:

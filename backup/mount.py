@@ -4,18 +4,20 @@ import re
 import os
 import subprocess
 import errno
+import logging
 
 # TODO: Mount with UUIDs
 # TODO: Filter by filesystem type
 # TODO: Write the Filesytem information to the root directory `lsblk -Jpbft /dev/vd*`
+
 
 class MountBackend(Backend):
     def parse_block(self):
         bla = subprocess.check_output(["sudo", "lsblk",
                                        "--json",
                                        "--paths",  # Get full paths to mount with
-                                       #"--fs", # Return the UUIDs to mount with and the filesystem type
-                                       #"--bytes" # Print size in bytes instead of human readable
+                                       "--fs", # Filesystem type
+                                       "--bytes", # Sizes in bytes instead of human readable
                                        self.disk_device])
         obj = json.loads(bla.decode("utf-8"))
         return obj["blockdevices"][0]
@@ -27,27 +29,34 @@ class MountBackend(Backend):
         dev = self.parse_block()
         mount_dir = self.mount_dir(systemname)
 
+        logging.debug(dev)
+
         def mount(name, path):
-            print("mount", path, name)
             # We intentionally ignore mount failures. If it doesn't mount, it doesn't back up.
-            subprocess.run(["sudo", "mount", "-r", name, path])
+            return ["sudo", "mount", "-r", name, path]
         self.dev_recurse(mount_dir, dev, mount)
 
     def umount(self, systemname):
+        if self.parent and not self.parent.umount:
+            logging.info("Skipping unmounting")
+            return
+
         dev = self.parse_block()
         mount_dir = self.mount_dir(systemname)
 
         def umount(name, path):
-            subprocess.run(["sudo", "umount",  path])
+            return ["sudo", "umount",  path]
         self.dev_recurse(mount_dir, dev, umount)
 
     def dev_recurse(self, mount_dir, dev, action):
-        path = os.path.join(mount_dir, os.path.basename(dev["name"]))
+        name = os.path.basename(dev["name"])
+        name = re.sub(r"^vd[a-z]+", "vd", name)
+        path = os.path.join(mount_dir, name)
+        
         if "children" in dev:
             for x in dev["children"]:
                 self.dev_recurse(path, x, action)
         else:
-            path = re.sub(r"vd[a-z]", "vd", path)
             try:
                 os.makedirs(path)
             except OSError as exc:
@@ -55,4 +64,15 @@ class MountBackend(Backend):
                     pass
                 else:
                     raise
-            action(dev["name"], path)
+
+            args = action(dev["name"], path)
+            res = subprocess.run(args,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT)
+            if res.returncode:
+                logging.info("Command %s failed with status code %s",
+                             " ".join(res.args), res.returncode)
+            else:
+                logging.info("Command %s succeded", " ".join(res.args))
+            if res.stdout:
+                logging.info(res.stdout.decode("utf-8"))
