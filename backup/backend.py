@@ -1,5 +1,7 @@
 import os
 import re
+import logging
+import subprocess
 
 class Backend:
     def __init__(self, name, config):
@@ -29,3 +31,15 @@ class Backend:
             if re.search(r"^vd[a-z]+$", entry):
                 return "/dev/" + entry
         raise FileNotFoundError("Did not find a matching block device")
+
+    def cmd_log(self, args, allow_fail=True):
+        res = subprocess.run(args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+        if res.returncode:
+            logging.info("Command %s failed with status code %s",
+                            " ".join(res.args), res.returncode)
+        else:
+            logging.info("Command %s succeded", " ".join(res.args))
+        if res.stdout:
+            logging.info(res.stdout.decode("utf-8"))

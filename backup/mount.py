@@ -33,7 +33,7 @@ class MountBackend(Backend):
 
         def mount(name, path):
             # We intentionally ignore mount failures. If it doesn't mount, it doesn't back up.
-            return ["sudo", "mount", "-r", name, path]
+            self.cmd_log(["sudo", "mount", "-r", name, path])
         self.dev_recurse(mount_dir, dev, mount)
 
     def umount(self, systemname):
@@ -45,7 +45,10 @@ class MountBackend(Backend):
         mount_dir = self.mount_dir(systemname)
 
         def umount(name, path):
-            return ["sudo", "umount",  path]
+            # If it didn't mount, umount will fail
+            self.cmd_log(["sudo", "umount", path])
+            # We need to also remove the symlinks that get made mapping LVM devices
+            self.cmd_log(["dmsetup", "remove", name])
         self.dev_recurse(mount_dir, dev, umount)
 
     def dev_recurse(self, mount_dir, dev, action):
@@ -65,14 +68,4 @@ class MountBackend(Backend):
                 else:
                     raise
 
-            args = action(dev["name"], path)
-            res = subprocess.run(args,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT)
-            if res.returncode:
-                logging.info("Command %s failed with status code %s",
-                             " ".join(res.args), res.returncode)
-            else:
-                logging.info("Command %s succeded", " ".join(res.args))
-            if res.stdout:
-                logging.info(res.stdout.decode("utf-8"))
+            action(dev["name"], path)
