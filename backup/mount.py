@@ -5,6 +5,7 @@ import os
 import subprocess
 import errno
 import logging
+import time
 
 # TODO: Mount with UUIDs
 # TODO: Filter by filesystem type
@@ -16,8 +17,8 @@ class MountBackend(Backend):
         bla = subprocess.check_output(["sudo", "lsblk",
                                        "--json",
                                        "--paths",  # Get full paths to mount with
-                                       "--fs", # Filesystem type
-                                       "--bytes", # Sizes in bytes instead of human readable
+                                       "--fs",  # Filesystem type
+                                       "--bytes",  # Sizes in bytes instead of human readable
                                        self.disk_device])
         obj = json.loads(bla.decode("utf-8"))
         return obj["blockdevices"][0]
@@ -47,15 +48,14 @@ class MountBackend(Backend):
         def umount(name, path):
             # If it didn't mount, umount will fail
             self.cmd_log(["sudo", "umount", path])
-            # We need to also remove the symlinks that get made mapping LVM devices
-            self.cmd_log(["dmsetup", "remove", name])
+            time.sleep(5)
         self.dev_recurse(mount_dir, dev, umount)
 
     def dev_recurse(self, mount_dir, dev, action):
         name = os.path.basename(dev["name"])
         name = re.sub(r"^vd[a-z]+", "vd", name)
         path = os.path.join(mount_dir, name)
-        
+
         if "children" in dev:
             for x in dev["children"]:
                 self.dev_recurse(path, x, action)

@@ -3,6 +3,10 @@ import subprocess
 
 
 class ClonezillaBackend(Backend):
+    def __init__(self,config):
+        super().__init__("clonezilla", config)
+
+
     def backup(self, vm_name):
         dev = self.disk_device
         if dev.startswith("/dev/"):
@@ -10,7 +14,7 @@ class ClonezillaBackend(Backend):
         else:
             raise Exception("Device name doesn't start with /dev/")
 
-        subprocess.run(["sudo", "ocs-sr"
+        subprocess.run(["sudo", "ocs-sr",
                         "--batch",
                         "--force-to-use-dd",
                         "--clone-hidden-data",

@@ -31,4 +31,5 @@ b.search = args.search
 b.umount = args.umount
 
 b.add(backup.backends.ResticBackend(config["restic"]))
+b.add(backup.backends.ClonezillaBackend(config["clonezilla"]))
 b.backup()

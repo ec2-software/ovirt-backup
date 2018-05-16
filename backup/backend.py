@@ -9,7 +9,7 @@ class Backend:
         self.config = config
         self.parent = None
 
-    def backup(self):
+    def backup(self, vm_name):
         raise NotImplementedError()
 
     @property

@@ -7,12 +7,14 @@ import time
 import uuid
 import ovirtsdk4 as sdk
 import ovirtsdk4.types as types
+import subprocess
 
 
 class Backup:
     def __init__(self, config):
         self.config = config["ovirt"]
         self.blacklist = config["blacklist"]
+        self.lvm = config["lvm"]
         self.backends = []
         self.search = None
         self.umount = True
@@ -187,6 +189,15 @@ class Backup:
         self.snap_service.remove()
         logging.info('Removed the snapshot \'%s\'.', self.snap_description)
 
+    def cleanup(self, data_vm):
+        # Remove the symlinks that get made mapping LVM devices
+        mapper = self.lvm["mapper"]
+        for x in os.listdir(mapper):
+            if not x in self.lvm["whitelist"]:
+                path = os.path.join(mapper, x)
+                logging.info("Cleaning up LVM device %s", path)
+                subprocess.check_call(["dmsetup", "remove", path])
+
     def save_ovf(self, data_vm):
         # Save the OVF to a file, so that we can use to restore the virtual
         # machine later. The name of the file is the name of the virtual
@@ -244,5 +255,6 @@ class Backup:
                         logging.info('Done with backup')
                 finally:
                     self.detach_disk(data_vm)
+                    self.cleanup(data_vm)
         finally:
             self.close()
