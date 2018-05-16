@@ -1,6 +1,8 @@
 from .. import Backend
 import subprocess
-
+import shutil
+import os
+import logging
 
 class ClonezillaBackend(Backend):
     def __init__(self,config):
@@ -8,13 +10,26 @@ class ClonezillaBackend(Backend):
 
 
     def backup(self, vm_name):
-        dev = self.disk_device
-        if dev.startswith("/dev/"):
-            dev = dev[len("/dev/"):]
-        else:
-            raise Exception("Device name doesn't start with /dev/")
+        prefix = "/dev/"
+        devices = []
+        for dev in self.disk_devices:
+            if dev.startswith(prefix):
+                devices.append(dev[len(prefix):])
+            else:
+                raise Exception("Device name doesn't start with /dev/")
 
-        subprocess.run(["sudo", "ocs-sr",
+        clonezillaDest = "/home/partimag"
+        dest = os.path.join(clonezillaDest, vm_name)
+        tmp = os.path.join(clonezillaDest, "{}.tmp".format(vm_name))
+        
+        try:
+            logging.info("Moving %s to %s", dest, tmp)
+            shutil.move(dest, tmp)
+        except:
+            pass
+
+        for dev in devices:
+            subprocess.run(["sudo", "ocs-sr",
                         "--batch",
                         "--force-to-use-dd",
                         "--clone-hidden-data",
@@ -26,3 +41,6 @@ class ClonezillaBackend(Backend):
                         vm_name,  # Image name
                         dev
                         ], check=True)
+        
+        logging.info("Removing tmp directory %s", tmp)
+        shutil.rmtree(tmp)

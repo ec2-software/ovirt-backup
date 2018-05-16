@@ -4,6 +4,7 @@ import backup
 import backup.backends
 import logging
 import argparse
+import os
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -18,6 +19,10 @@ parser.add_argument("--config", dest="config_file", default="config.yml", help="
 parser.add_argument("--search", dest="search", default=None, help="search for specific VM name")
 parser.add_argument("--umount", type=str2bool, dest="umount", default=True, help="Unmount the drives and detach the disks")
 args = parser.parse_args()
+
+#defaults_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "defaults.yml")
+
+#for file in [ defaults_file, "/etc/ovirt-backup/config.yml", args.config_file ]:
 
 
 with open(args.config_file) as c:
