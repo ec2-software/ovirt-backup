@@ -59,7 +59,10 @@ class MountBackend(Backend):
             for x in dev["children"]:
                 self.dev_recurse(mount_dir, x, action)
         else:
-            if dev["fstype"] == None:
+            if dev["fstype"] == None or dev["fstype"] == "swap":
+                return
+            if dev["uuid"] == None:
+                logging.warn("UUID is None for %s", dev["name"])
                 return
 
             path = os.path.join(mount_dir, dev["uuid"])

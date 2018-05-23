@@ -1,4 +1,4 @@
-config.yml
+config*.yml
 *.pem
 __pycache__
 *.log

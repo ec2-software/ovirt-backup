@@ -43,4 +43,7 @@ class ClonezillaBackend(Backend):
                         ], check=True)
         
         logging.info("Removing tmp directory %s", tmp)
-        shutil.rmtree(tmp)
+        try:
+            shutil.rmtree(tmp)
+        except:
+            pass
