@@ -28,7 +28,7 @@ args = parser.parse_args()
 with open(args.config_file) as c:
     config = yaml.safe_load(c)
 
-logging.basicConfig(level=logging.DEBUG, filename='example.log')
+logging.basicConfig(level=logging.DEBUG, filename='/var/log/ovirt-backup.log')
 #logging.getLogger().addHandler(logging.StreamHandler())
 
 b = backup.Backup(config)

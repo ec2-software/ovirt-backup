@@ -18,6 +18,7 @@ class ResticBackend(MountBackend):
             subprocess.run(["/opt/restic",
                             "-r", repo,
                             "--hostname", vm_name,
+                            "--cache-dir", "/home/partimag/resticache",
                             "backup",
                             os.path.join(base_dir, vm_name)
                             ],
