@@ -1,0 +1,21 @@
+ovirt:
+  url: https://ovirt.example.com
+  username: admin@internal
+  password: ''
+  ca_file: ca.pem
+  application_name: OvirtBackup
+  ovf_dest: '{name}-{id}.ovf'
+  vm_name: ''
+  attach_wait_seconds: 10
+restic:
+  enabled: false
+  repository: ''
+  password: ''
+  mountpoint: /media
+clonezilla:
+  enabled: false
+  destination: /home/partimag/{name}
+lvm:
+  mapper: /dev/mapper
+  whitelist: []
+blacklist: []
