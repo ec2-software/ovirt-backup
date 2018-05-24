@@ -18,6 +18,8 @@ class Backup:
         self.backends = []
         self.search = None
         self.umount = True
+        self.retries = config["retries"]["attempts"]
+        self.retries_wait = config["retries"]["wait_seconds"]
 
         # Use timestamp as a unique ID
         self.event_id = int(time.time())
@@ -245,16 +247,28 @@ class Backup:
             for data_vm in vms:
                 self.save_ovf(data_vm)
                 self.attach_disk(data_vm)
-                try:
-                    for backend in self.backends:
-                        logging.info('Checking backend if enabled...')
-                        if backend.enabled_now:
-                            logging.info(
-                                'Backing %s up with backend %s', data_vm.name, backend.name)
-                            backend.backup(data_vm.name)
-                        logging.info('Done with backup')
-                finally:
-                    self.detach_disk(data_vm)
-                    self.cleanup(data_vm)
+                for i in range(0, self.retries):
+                    try:
+                        for backend in self.backends:
+                            logging.info('Checking backend if enabled...')
+                            if backend.enabled_now:
+                                logging.info(
+                                    'Backing %s up with backend %s', data_vm.name, backend.name)
+                                backend.backup(data_vm.name)
+                            logging.info('Done with backup')
+                    except sdk.Error as err:
+                        if i < self.retries:
+                            logging.warn(
+                                "Backup failed attempt %s. %s Waiting for %s seconds",
+                                i + 1, err, self.retries_wait)
+                            time.sleep(self.retries_wait)
+                            continue
+                        else:
+                            logging.warn("Backup failed %s", err)
+                            raise
+                    finally:
+                        self.detach_disk(data_vm)
+                        self.cleanup(data_vm)
+                    break
         finally:
             self.close()

@@ -18,4 +18,9 @@ clonezilla:
 lvm:
   mapper: /dev/mapper
   whitelist: []
+logs:
+  file: /var/log/ovirt-backup.log
+retries:
+  attempts: 3
+  wait_seconds: 10
 blacklist: []

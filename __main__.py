@@ -30,8 +30,8 @@ for file in [ defaults_file, "/etc/ovirt-backup/config.yml", args.config_file ]:
     try:
         with open(file, "r") as c:
             backup.util.dict_merge(config, yaml.safe_load(c))
-    except IOError:
-        print("Failed to load {}".format(file))
+    except IOError as err:
+        print("Failed to load {}. {}".format(file, err))
         pass
 
 if args.show_config:
@@ -39,7 +39,7 @@ if args.show_config:
     pp.pprint(config)
     exit()
 
-logging.basicConfig(level=logging.DEBUG, filename='/var/log/ovirt-backup.log')
+logging.basicConfig(level=logging.DEBUG, filename=config['logs']['file'])
 #logging.getLogger().addHandler(logging.StreamHandler())
 
 b = backup.Backup(config)
