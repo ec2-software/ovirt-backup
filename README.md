@@ -14,10 +14,9 @@ It works by sitting in a VM in your Ovirt cluster and automatically snapshotting
 
 Set up Virtual Machine with Ubuntu 16.04 LTS in your Ovirt cluster. This is the VM where you will run the script. [Install the Ovirt guest agent.](https://www.ovirt.org/documentation/how-to/guest-agent/install-the-guest-agent-in-ubuntu/) The following specifications worked well in our instance:
 
-- Use Ubuntu 16 LTS
-- 50 gig Hard drive
-- 8Gb Ram
-- 4 CPU
+| Disk Space | RAM | CPUs |
+| ---------- | --- | ---- |
+| 50 GB      | 8 GB| 4    |
 
 > It is best to NOT use LVM when setting up the hard disk. It's possible to run the script with it, but it requires extra configuration.
 
