@@ -1,0 +1,18 @@
+#!/bin/sh
+
+BACKUP_PID_FILE=/var/run/backup.pid
+BACKUP_CONFIG_FILE=/root/ovirt-backup/config-restic.yml
+
+echo "nvoffice restic backup"
+
+if [ -f $BACKUP_PID_FILE ]; then
+  echo "Backup already running"
+  exit 0
+
+else
+  touch "$BACKUP_PID_FILE"
+  /root/ovirt-backup/__main__.py --config "$BACKUP_CONFIG_FILE"
+  rm -f "$BACKUP_PID_FILE"
+fi
+
+
