@@ -1,4 +1,3 @@
-
 # Ovirt Backup System
 
 This is a modular backup system that allows you to backup all the VMs in an Ovirt instance regularly without any configuration in the VMs.
@@ -36,7 +35,7 @@ apt-get install nfs-common
 
 > Clonezilla only backs up to the `/home/partimag` directory, so it's recommended you make this where you mount your backup to.
 
-### Script dependencies
+### Install Script
 
 ```bash
 apt-get install \
@@ -55,6 +54,8 @@ apt-get install \
     usermode
 pip3 install ovirt-engine-sdk-python
 ```
+
+Git clone the project into a directory. You can then run the script by running `python3 $DIRECTORY_CLONED --help`. To see the arguments.
 
 ### Clonezilla
 
@@ -88,30 +89,30 @@ Ovirt-Backups reads configurations from 3 locations, each successive location ov
 
 ```yaml
 ovirt:
-  url: https://ovirt.example.com # The API URL of your Ovirt instance
-  username: admin@internal       # Username and password for authentication
-  password: ''                   #   should have permission for all VMs
-  ca_file: ca.pem                # Cert for HTTPs
-  application_name: OvirtBackup  # Name displayed inside of Ovirt for your backups
-  ovf_dest: '{name}-{id}.ovf'    # Python `.format` pattern for OVF filename
-  vm_name: ''                    # Name of the Ovirt VM that this script runs on
-  attach_wait_seconds: 10        # How many seconds to wait after attaching a disk to make sure it's connected fully.
+  url: https://ovirt.example.com     # The API URL of your Ovirt instance
+  username: admin@internal           # Username and password for authentication
+  password: ''                       #   should have permission for all VMs
+  ca_file: ca.pem                    # Cert for HTTPs
+  application_name: OvirtBackup      # Name displayed inside of Ovirt for your backups
+  ovf_dest: '{name}-{id}.ovf'        # Python `.format` pattern for OVF filename
+  vm_name: ''                        # Name of the Ovirt VM that this script runs on
+  attach_wait_seconds: 10            # How many seconds to wait after attaching a disk to make sure it's connected fully.
 restic:
   enabled: false
-  repository: ''                 # Path to restic repository
+  repository: ''                     # Path to restic repository
   password: ''
-  mountpoint: /media             # Directory to mount disks that are attached. This should not be a network share. It unmounts after the backup is complete.
+  mountpoint: /media                 # Directory to mount disks that are attached. This should not be a network share. It unmounts after the backup is complete.
 clonezilla:
   enabled: false
-  destination: /home/partimag/{name} # Pattern `.format` pattern with VM name being backed up
+  destination: /home/partimag/{name} # Pattern `.format` pattern with VM name being backed up. Needs to be an immediate subdirectory of `/home/partimag`
 lvm:
   mapper: /dev/mapper
-  whitelist: []                  # If you use LVM, you need to add your device names found in the mapper directory to prevent the script from unmounting them.
+  whitelist: []                      # If you use LVM, you need to add your device names found in the mapper directory to prevent the script from unmounting them.
 logs:
-  file: /var/log/ovirt-backup.log # Currently does not support logging to stdout, pull requests welcome ;)
+  file: /var/log/ovirt-backup.log    # Currently does not support logging to stdout, pull requests welcome ;)
 retries:
-  attempts: 3                    # If a backup randomly fails, how many attempts to retry it. For example, it will occur 4 times total if you retry 3 times.
-  wait_seconds: 10               # How many seconds to wait between retries.
+  attempts: 3                        # If a backup randomly fails, how many attempts to retry it. For example, it will occur 4 times total if you retry 3 times.
+  wait_seconds: 10                   # How many seconds to wait between retries.
 ```
 
 ## Know Issues
