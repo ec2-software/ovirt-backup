@@ -95,7 +95,7 @@ class Backup:
         snap = snaps_service.add(
             snapshot=types.Snapshot(
                 description=snap_description,
-                persist_memorystate=True,
+                persist_memorystate=False,
             ),
         )
         logging.info(
@@ -110,6 +110,7 @@ class Backup:
             time.sleep(1)
             snap = snap_service.get()
         logging.info('The snapshot is now complete.')
+        time.sleep(15)
 
         # Retrieve the descriptions of the disks of the snapshot:
         snap_disks_service = snap_service.disks_service()
@@ -189,6 +190,22 @@ class Backup:
 
         # Remove the snapshot:
         self.snap_service.remove()
+        # Poll and wait till the status of the snapshot is 'ok', which means
+        # that it is completely created:
+        	
+        snap = self.snap_service.get()
+        try:
+            while snap.snapshot_status != types.SnapshotStatus.OK:
+                time.sleep(1)
+                snap = self.snap_service.get()
+                logging.debug('The snapshot status is %s.', snap.snapshot_status)
+        except sdk.NotFoundError:
+             pass
+        logging.info('The snapshot is now complete.')
+
+
+
+
         logging.info('Removed the snapshot \'%s\'.', self.snap_description)
 
     def cleanup(self, data_vm):
@@ -255,7 +272,6 @@ class Backup:
                                 logging.info(
                                     'Backing %s up with backend %s', data_vm.name, backend.name)
                                 backend.backup(data_vm.name)
-                            logging.info('Done with backup')
                     except sdk.Error as err:
                         if i < self.retries:
                             logging.warn(
@@ -267,6 +283,7 @@ class Backup:
                             logging.warn("Backup failed %s", err)
                             raise
                     finally:
+                        logging.info('Cleanup %s', data_vm.name)
                         self.detach_disk(data_vm)
                         self.cleanup(data_vm)
                     break
