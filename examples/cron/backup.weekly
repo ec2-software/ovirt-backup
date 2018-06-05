@@ -1,9 +1,9 @@
 #!/bin/sh
 
 BACKUP_PID_FILE=/var/run/backup.pid
-BACKUP_CONFIG_FILE=/root/ovirt-backup/config-restic.yml
+BACKUP_CONFIG_FILE=/etc/ovirt-backup/config-clonezilla.yml
 
-echo "nvoffice restic backup"
+echo "nvoffice clonezilla  backup"
 
 if [ -f $BACKUP_PID_FILE ]; then
   echo "Backup already running"

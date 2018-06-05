@@ -1,4 +1,6 @@
-config*.yml
+/config*.yml
+mount-restic.sh
+
 *.pem
 __pycache__
 *.log

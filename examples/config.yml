@@ -1,0 +1,27 @@
+ovirt:
+  url: https://ovirt.example.com/ovirt-engine/api
+  username: admin@internal
+  password: CENSORED
+  ca_file: /root/ovirt-backup/ca.pem
+  application_name: mybackup
+  ovf_dest: /home/partimag/OVFs/{name}-{id}.ovf
+  vm_name: BackupSystem
+  attach_wait_seconds: 10
+restic:
+  enabled: false
+  repository: /home/partimag/nvoffice-restic
+  password: CENSORED
+  mountpoint: /media
+clonezilla:
+  enabled: false
+  destination: /home/partimag/{name}
+lvm:
+  mapper: /dev/mapper
+  whitelist:
+  - BackupServer--vg-swap_1
+  - BackupServer--vg-root
+  - control
+blacklist:
+- BackupSystem
+- /^build-docker[0-9]+$/
+
