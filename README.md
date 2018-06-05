@@ -115,7 +115,7 @@ retries:
 blacklist: []                        # A list of VMs to not backup. You may begin and end a string with `/` to indicate a regular expression to match many VMs
 ```
 
-## Know Issues
+## Known Issues
 
 Sometimes, having other snapshots on the VM will prevent Ovirt from being able to create a new one. You should ensure you don't have snapshosts on the VMs you are backing up.
 
