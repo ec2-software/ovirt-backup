@@ -63,7 +63,9 @@ To use clonezilla, you will need to install the command-line tool. Clonezilla is
 ```bash
 echo 'deb http://us.archive.ubuntu.com/ubuntu xenial main universe' >> /etc/apt/sources.list
 apt-get update
-apt-get install clonezilla
+apt-get install \
+    clonezilla \
+    bc  # For some reason, clonzilla doesn't require this in it's package.
 ```
 
 ### Restic
