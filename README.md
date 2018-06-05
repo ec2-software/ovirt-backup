@@ -119,3 +119,9 @@ blacklist: []                        # A list of VMs to not backup. You may begi
 ## Know Issues
 
 Sometimes, having other snapshots on the VM will prevent Ovirt from being able to create a new one. You should ensure you don't have snapshosts on the VMs you are backing up.
+
+## Credits
+
+- Thanks to the Ovirt team for a great open source virtual machine management system.
+- The basis for this project comes from an SDK example https://github.com/oVirt/ovirt-engine-sdk/blob/master/sdk/examples/vm_backup.py
+- https://github.com/wefixit-AT/oVirtBackup
