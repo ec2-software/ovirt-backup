@@ -81,7 +81,7 @@ chmod +x /opt/restic
 
 ## Configuration
 
-Ovirt-Backups reads configurations from 3 locations, each successive location overwritting the previous values.
+Ovirt-Backups reads configurations from 3 locations, each successive location overwritting the previous values. This is usefull because you can set up a base config in `/etc/ovirt-backup/config.yml`, then run the script with a config file that enables the specific backup types you want for your schedule.
 
 - `defaults.yml` in the project directory. Do not modify this file.
 - `/etc/ovirt-backup/config.yml` Create this file by copying `defaults.yml` to this location.
