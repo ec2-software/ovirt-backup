@@ -113,6 +113,7 @@ logs:
 retries:
   attempts: 3                        # If a backup randomly fails, how many attempts to retry it. For example, it will occur 4 times total if you retry 3 times.
   wait_seconds: 10                   # How many seconds to wait between retries.
+blacklist: []                        # A list of VMs to not backup. You may begin and end a string with `/` to indicate a regular expression to match many VMs
 ```
 
 ## Know Issues
